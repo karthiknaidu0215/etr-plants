@@ -21,7 +21,7 @@ export async function runSecureSetup(formData: FormData) {
     const dbHost = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://', '').replace('.supabase.co', '')
     if (!dbHost) return { success: false, error: 'Cannot parse DB host' }
     
-    const directConnectionString = `postgresql://postgres:${dbPassword}@db.${dbHost}.supabase.co:5432/postgres`
+    const directConnectionString = `postgresql://postgres:${encodeURIComponent(dbPassword)}@db.${dbHost}.supabase.co:5432/postgres`
     const client = new Client({ connectionString: directConnectionString })
     
     try {
