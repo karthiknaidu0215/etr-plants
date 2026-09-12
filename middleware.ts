@@ -1,10 +1,8 @@
-import { createServerClient } from '@supabase/ssr'
+﻿import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  let supabaseResponse = NextResponse.next({ request })
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY
@@ -16,7 +14,6 @@ export async function middleware(request: NextRequest) {
   const finalKey = key?.trim() || ''
 
   if (!finalUrl || !finalKey) {
-    // If running without env variables, redirect to a safe page or skip middleware logic gracefully
     if (request.nextUrl.pathname.startsWith('/admin')) {
       const redirectUrl = request.nextUrl.clone()
       redirectUrl.pathname = '/'
@@ -26,55 +23,37 @@ export async function middleware(request: NextRequest) {
   }
 
   const supabase = createServerClient(finalUrl, finalKey, {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
+    cookies: {
+      getAll() { return request.cookies.getAll() },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+        supabaseResponse = NextResponse.next({ request })
+        cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
       },
-    global: {
-      headers: {
-        apikey: finalKey,
-        Authorization: `Bearer ${finalKey}`
-      }
-    }
-    }
-  )
+    },
+    global: { headers: { apikey: finalKey, Authorization: `Bearer ${finalKey}` } }
+  })
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // Protect all /admin routes except /admin/login
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
-  const isLoginRoute = request.nextUrl.pathname === '/admin/login'
+  const isPublicAdminRoute = ['/admin/login', '/admin/secure-setup', '/admin/forgot-password'].includes(request.nextUrl.pathname)
 
-  if (isAdminRoute && !isLoginRoute && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/admin/login'
-    return NextResponse.redirect(url)
+  if (isAdminRoute && !isPublicAdminRoute && !user) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = '/admin/login'
+    return NextResponse.redirect(redirectUrl)
   }
 
-  // Redirect to dashboard if logged in and trying to access login page
-  if (isLoginRoute && user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/admin/dashboard'
-    return NextResponse.redirect(url)
+  if (isPublicAdminRoute && user && request.nextUrl.pathname === '/admin/login') {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = '/admin/dashboard'
+    return NextResponse.redirect(redirectUrl)
   }
 
   return supabaseResponse
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }

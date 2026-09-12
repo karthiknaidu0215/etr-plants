@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard, Leaf, Grid3X3, MapPin, Image as ImageIcon,
-  MessageSquare, Settings, LogOut, Menu, X, FileText
+  MessageSquare, Settings, LogOut, Menu, X, FileText, Users
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -20,6 +20,7 @@ const adminLinks = [
   { href: '/admin/leads', label: 'Leads & Quotes', icon: MessageSquare },
   { href: '/admin/fertilizers', label: 'Fertilizers', icon: Leaf },
   { href: '/admin/additional-items', label: 'Additional Items', icon: Grid3X3 },
+  { href: '/admin/admins', label: 'Admin Accounts', icon: Users },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -29,7 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // If on login page, don't show admin sidebar
-  if (pathname === '/admin/login' || pathname === '/admin/secure-setup') {
+  if (pathname === '/admin/login' || pathname === '/admin/secure-setup' || pathname === '/admin/forgot-password') {
     return <>{children}</>
   }
 

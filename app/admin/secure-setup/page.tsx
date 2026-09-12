@@ -30,7 +30,6 @@ export default function SecureSetupPage() {
           if (res.success) {
             redirect('/admin/login?setup=success')
           } else {
-            // Very basic error handling for the one-time form
             throw new Error(res.error)
           }
         }}>
@@ -41,17 +40,22 @@ export default function SecureSetupPage() {
             </div>
             
             <div className="pt-4 border-t">
-              <label className="block text-sm font-medium text-gray-700">Admin 1 Password (adminrayudu@etrplants.com)</label>
+              <label className="block text-sm font-medium text-gray-700">Admin 1 Password (admin1)</label>
               <input name="admin1Password" type="password" required className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-forest-500 focus:border-forest-500 sm:text-sm" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Admin 2 Password (admin2@etrplants.com)</label>
+              <label className="block text-sm font-medium text-gray-700">Admin 1 Recovery Phone</label>
+              <input name="admin1Phone" type="tel" required placeholder="+91..." className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-forest-500 focus:border-forest-500 sm:text-sm" />
+            </div>
+
+            <div className="pt-4 border-t">
+              <label className="block text-sm font-medium text-gray-700">Admin 2 Password (admin2)</label>
               <input name="admin2Password" type="password" required className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-forest-500 focus:border-forest-500 sm:text-sm" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Admin 3 Password (admin3@etrplants.com)</label>
+              <label className="block text-sm font-medium text-gray-700">Admin 3 Password (admin3)</label>
               <input name="admin3Password" type="password" required className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-forest-500 focus:border-forest-500 sm:text-sm" />
             </div>
           </div>
@@ -66,4 +70,3 @@ export default function SecureSetupPage() {
     </div>
   )
 }
-

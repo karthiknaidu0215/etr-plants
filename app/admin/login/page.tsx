@@ -1,13 +1,14 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Leaf, Loader2 } from 'lucide-react'
+import Link from 'next/link'
 
 export default function AdminLoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -18,15 +19,27 @@ export default function AdminLoginPage() {
     setError('')
 
     const supabase = createClient()
-    const { error: err } = await supabase.auth.signInWithPassword({
-      email,
+    const mappedEmail = `${username.trim().toLowerCase()}@etrplants.internal`
+
+    const { data, error: err } = await supabase.auth.signInWithPassword({
+      email: mappedEmail,
       password,
     })
 
     if (err) {
-      setError(err.message)
+      setError(err.message === 'Invalid login credentials' ? 'Invalid username or password' : err.message)
       setLoading(false)
     } else {
+      // Check if user is active in admin_profiles
+      const { data: profile } = await supabase.from('admin_profiles').select('is_active').eq('id', data.user.id).single()
+      
+      if (profile && profile.is_active === false) {
+        await supabase.auth.signOut()
+        setError('Your account has been deactivated.')
+        setLoading(false)
+        return
+      }
+
       router.push('/admin/dashboard')
       router.refresh()
     }
@@ -34,7 +47,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-card border border-gray-100 p-8 text-center">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-card border border-gray-100 p-8 text-center relative">
         <div className="w-16 h-16 bg-forest-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Leaf className="w-8 h-8 text-accent-400" />
         </div>
@@ -44,11 +57,11 @@ export default function AdminLoginPage() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <input
-              type="email"
+              type="text"
               required
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:border-forest-700 focus:outline-none"
             />
           </div>
@@ -73,6 +86,10 @@ export default function AdminLoginPage() {
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
           </button>
         </form>
+
+        <div className="mt-4 text-sm">
+          <Link href="/admin/forgot-password" className="text-forest-600 hover:underline font-medium">Forgot Password?</Link>
+        </div>
 
         <div className="mt-8 text-xs text-gray-400">
           <p>This area is restricted to authorized personnel only.</p>
