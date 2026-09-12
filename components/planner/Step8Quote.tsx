@@ -55,6 +55,32 @@ export default function Step8Quote() {
         intent: form.intent,
       }
 
+      // 1. Insert Plantation Plan
+      await supabase.from('plantation_plans').insert({
+        id: planId,
+        customer_name: form.name.trim(),
+        customer_phone: form.phone.trim(),
+        customer_email: form.email.trim() || null,
+        land_size_acres: landAcres,
+        location_state: selectedState || null,
+        location_district: selectedDistrict || null,
+        location_mandal: selectedMandal || null,
+        selected_plants: leadData.selected_plants,
+        total_investment: usePlannerStore.getState().calculations.totalInvestment,
+        expected_income: usePlannerStore.getState().calculations.totalIncome
+      })
+
+      // 2. Insert Farm Design if available
+      const currentFarmZones = usePlannerStore.getState().farmZones
+      if (currentFarmZones && currentFarmZones.length > 0) {
+        await supabase.from('farm_designs').insert({
+          plan_id: planId,
+          layout_data: currentFarmZones
+        })
+      }
+
+      // 3. Insert Lead
+      leadData.plan_id = planId
       const { error: dbErr } = await supabase.from('leads').insert(leadData)
       if (dbErr) throw dbErr
 

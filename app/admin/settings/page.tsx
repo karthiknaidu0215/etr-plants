@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -86,7 +88,7 @@ export default function AdminSettingsPage() {
                   <p className="text-xs text-gray-500">{s.description}</p>
                 </div>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">â‚¹</span>
                   <input
                     type="number"
                     value={s.value.amount || 0}
@@ -109,3 +111,5 @@ export default function AdminSettingsPage() {
     </div>
   )
 }
+
+

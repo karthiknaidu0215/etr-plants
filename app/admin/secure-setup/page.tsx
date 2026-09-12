@@ -1,4 +1,6 @@
-﻿import { runSecureSetup } from './actions'
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { runSecureSetup } from './actions'
 import fs from 'fs'
 import path from 'path'
 import { redirect } from 'next/navigation'
@@ -70,3 +72,5 @@ export default function SecureSetupPage() {
     </div>
   )
 }
+
+

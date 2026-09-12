@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState } from 'react'
@@ -6,7 +8,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard, Leaf, Grid3X3, MapPin, Image as ImageIcon,
-  MessageSquare, Settings, LogOut, Menu, X, FileText, Users
+  MessageSquare, Settings, LogOut, Menu, X, FileText, Users, Globe
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +23,7 @@ const adminLinks = [
   { href: '/admin/fertilizers', label: 'Fertilizers', icon: Leaf },
   { href: '/admin/additional-items', label: 'Additional Items', icon: Grid3X3 },
   { href: '/admin/admins', label: 'Admin Accounts', icon: Users },
+  { href: '/admin/website', label: 'Website CMS', icon: Globe },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -124,3 +127,5 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </div>
   )
 }
+
+

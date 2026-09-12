@@ -1,4 +1,4 @@
-﻿'use server'
+'use server'
 
 import { Client } from 'pg'
 import fs from 'fs'

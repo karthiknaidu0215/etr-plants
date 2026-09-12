@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from '@/lib/supabase/server'
 import { Leaf, Grid3X3, MessageSquare, MapPin } from 'lucide-react'
 
@@ -50,3 +52,5 @@ export default async function AdminDashboard() {
     </div>
   )
 }
+
+

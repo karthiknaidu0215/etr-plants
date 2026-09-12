@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { ChevronRight, Leaf, TrendingUp, Shield } from 'lucide-react'
 
+import { useWebsiteContent } from '@/hooks/useWebsiteContent'
+
 const stats = [
   { icon: Leaf, label: '10+ Plant Varieties' },
   { icon: TrendingUp, label: '3 States Coverage' },
@@ -10,6 +12,8 @@ const stats = [
 ]
 
 export default function HeroSection() {
+  const content = useWebsiteContent()
+  
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background */}
@@ -39,15 +43,16 @@ export default function HeroSection() {
 
         {/* Headline */}
         <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-[1.1] mb-6">
-          Design Your Farm.{' '}
-          <span className="text-accent-400">Plan Your Plantation.</span>{' '}
-          Grow Smarter.
+          {content.hero_heading.split('.').map((part: string, i: number, arr: string[]) => (
+            <span key={i} className={i === 1 ? "text-accent-400" : ""}>
+              {part}{i < arr.length - 1 ? '.' : ''}
+            </span>
+          ))}
         </h1>
 
         {/* Supporting text */}
         <p className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto mb-10 leading-relaxed">
-          Create a customized plantation plan for your land with the right plants,
-          spacing, investment estimate and expected returns.
+          {content.hero_subheading}
         </p>
 
         {/* CTAs */}
