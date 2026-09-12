@@ -1,4 +1,4 @@
-﻿-- Admin Authentication Schema
+-- Admin Authentication Schema
 
 CREATE TABLE IF NOT EXISTS public.admin_profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,

@@ -1,4 +1,4 @@
-﻿-- Fix RLS: Allow everyone to SELECT from configuration tables
+-- Fix RLS: Allow everyone to SELECT from configuration tables
 -- Apply to plants
 DROP POLICY IF EXISTS "Anyone can read plants" ON public.plants;
 CREATE POLICY "Anyone can read plants" ON public.plants

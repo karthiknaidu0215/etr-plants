@@ -60,7 +60,7 @@ export async function runSecureSetup(formData: FormData) {
     const supabase = createAdminClient()
     
     const admins = [
-      { username: 'admin1', password: admin1Password, role: 'super_admin', phone: admin1Phone },
+      { username: 'Rayudu', password: admin1Password, role: 'super_admin', phone: admin1Phone },
       { username: 'admin2', password: admin2Password, role: 'admin', phone: null },
       { username: 'admin3', password: admin3Password, role: 'admin', phone: null }
     ]
