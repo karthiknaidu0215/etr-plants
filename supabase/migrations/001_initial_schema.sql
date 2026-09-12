@@ -233,3 +233,10 @@ VALUES
     '{"annual_income_per_plant": 0}',
     '{"type": "General Purpose", "frequency": "Yearly"}'
 );
+
+ - -   G r a n t   p r i v i l e g e s   t o   a n o n   a n d   a u t h e n t i c a t e d   r o l e s 
+ G R A N T   U S A G E   O N   S C H E M A   p u b l i c   T O   a n o n ,   a u t h e n t i c a t e d ; 
+ G R A N T   A L L   O N   A L L   T A B L E S   I N   S C H E M A   p u b l i c   T O   a n o n ,   a u t h e n t i c a t e d ; 
+ G R A N T   A L L   O N   A L L   S E Q U E N C E S   I N   S C H E M A   p u b l i c   T O   a n o n ,   a u t h e n t i c a t e d ; 
+  
+ 
