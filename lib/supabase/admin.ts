@@ -1,5 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
+if (typeof global !== 'undefined' && !global.WebSocket) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  global.WebSocket = class WebSocket {} as any;
+}
+
+
 // Admin client using service role key — NEVER expose to browser
 export function createAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL

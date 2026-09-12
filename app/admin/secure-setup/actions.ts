@@ -30,6 +30,7 @@ export async function runSecureSetup(formData: FormData) {
       ssl: { rejectUnauthorized: false }
     })
     
+    client.on('error', (err) => console.error('PG Client Error:', err))
     try {
       await client.connect()
       // Run the initial phase 2 migration if not run yet (idempotent due to IF NOT EXISTS)
@@ -69,7 +70,10 @@ export async function runSecureSetup(formData: FormData) {
       const email = `${admin.username}@etrplants.internal`
       
       // Check if user exists first to make idempotent
-      const { data: existingUser } = await supabase.auth.admin.listUsers()
+      const { data: existingUser, error: listError } = await supabase.auth.admin.listUsers()
+      if (listError || !existingUser) {
+        return { success: false, error: 'Failed to list users: ' + (listError?.message || 'No data') }
+      }
       let userId = existingUser.users.find(u => u.email === email)?.id
 
       if (!userId) {
