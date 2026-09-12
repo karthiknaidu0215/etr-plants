@@ -6,10 +6,22 @@ export async function middleware(request: NextRequest) {
     request,
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!url || !key) {
+    // If running without env variables, redirect to a safe page or skip middleware logic gracefully
+    // But since this protects /admin, it's safer to throw or just skip
+    // To avoid bringing the whole site down, let's just proceed without user if keys are missing
+    if (request.nextUrl.pathname.startsWith('/admin')) {
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/'
+      return NextResponse.redirect(redirectUrl)
+    }
+    return supabaseResponse
+  }
+
+  const supabase = createServerClient(url, key, {
       cookies: {
         getAll() {
           return request.cookies.getAll()
