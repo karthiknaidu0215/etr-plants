@@ -3,18 +3,22 @@
 import { useEffect, useState, useMemo } from 'react'
 import { usePlannerStore } from '@/stores/plannerStore'
 import { createClient } from '@/lib/supabase/client'
-import { Plant, SelectedPlant } from '@/lib/types'
+import { Plant, SelectedPlant, Category } from '@/lib/types'
 import { formatCurrency, formatNumber } from '@/lib/utils'
-import { Leaf, Search, Trash2, Loader2, AlertTriangle, SlidersHorizontal } from 'lucide-react'
+import { Leaf, Search, Trash2, Loader2, AlertTriangle, SlidersHorizontal, Grid3X3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function Step4PlantLibrary() {
   const {
-    selectedTypeIds, selectedPlants,
+    selectedTypeIds,
+    selectedPlants,
     addPlant, removePlant, updatePlantSpacing, updatePlantAllocation, equalizeAllocations,
     calculations,
   } = usePlannerStore()
 
+  const [categories, setCategories] = useState<Category[]>([])
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
+  
   const [allPlants, setAllPlants] = useState<Plant[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -23,28 +27,36 @@ export default function Step4PlantLibrary() {
 
   useEffect(() => {
     const supabase = createClient()
-    let query = supabase
+    
+    // Fetch categories
+    supabase.from('categories').select('*').eq('is_active', true).order('sort_order').then(({data, error: err}) => {
+      if (!err && data) {
+        // Filter to only those selected in Step 3
+        const filteredCats = data.filter(c => selectedTypeIds.length === 0 || selectedTypeIds.includes(c.id))
+        setCategories(filteredCats)
+        if (filteredCats.length > 0) setActiveCategoryId(filteredCats[0].id)
+      }
+    })
+
+    // Fetch plants
+    supabase
       .from('plants')
       .select('*, category:categories(id, name)')
       .eq('is_active', true)
-
-    if (selectedTypeIds.length > 0) {
-      query = query.in('category_id', selectedTypeIds)
-    }
-
-    query.then(({ data, error }) => {
-      if (error) {
-        console.error('Error fetching plants:', error)
-        setError(true)
-      } else {
-        setAllPlants(data as Plant[])
-      }
-      setLoading(false)
-    })
+      .then(({ data, error: err }) => {
+        if (err) {
+          console.error('Error fetching plants:', err)
+          setError(true)
+        } else {
+          setAllPlants(data as Plant[])
+        }
+        setLoading(false)
+      })
   }, [selectedTypeIds])
 
   const filtered = useMemo(() => {
     return allPlants
+      .filter((p) => activeCategoryId ? p.category_id === activeCategoryId : true)
       .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => {
         if (sortBy === 'name') return a.name.localeCompare(b.name)
@@ -52,7 +64,7 @@ export default function Step4PlantLibrary() {
         if (sortBy === 'spacing') return a.default_spacing - b.default_spacing
         return 0
       })
-  }, [allPlants, search, sortBy])
+  }, [allPlants, search, sortBy, activeCategoryId])
 
   const isSelected = (id: string, size: 'S'|'M'|'L') => selectedPlants.some((p) => p.plantId === id + '-' + size)
 
@@ -69,6 +81,29 @@ export default function Step4PlantLibrary() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
         {/* Left: Library */}
         <div className="lg:col-span-3 space-y-4">
+          
+          {/* Categories Horizontal Menu */}
+          {categories.length > 0 && (
+            <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide">
+              <button
+                onClick={() => setActiveCategoryId(null)}
+                className={cn("px-4 py-2 whitespace-nowrap rounded-full text-sm font-bold border-2 transition-colors", activeCategoryId === null ? 'bg-forest-700 text-white border-forest-700' : 'bg-white text-gray-600 border-gray-200 hover:border-forest-600')}
+              >
+                All Plants
+              </button>
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategoryId(cat.id)}
+                  className={cn("px-4 py-2 whitespace-nowrap rounded-full text-sm font-bold border-2 transition-colors flex items-center gap-2", activeCategoryId === cat.id ? 'bg-forest-700 text-white border-forest-700' : 'bg-white text-gray-600 border-gray-200 hover:border-forest-600')}
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="flex gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -102,20 +137,21 @@ export default function Step4PlantLibrary() {
           ) : error ? (
             <div className="py-12 text-center text-red-500 bg-red-50 rounded-2xl border border-red-100">
               <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>Failed to load plant library.</p>
+              <p>Failed to load plant library. (Please ensure setup migrations are run).</p>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-12 text-center text-gray-400 bg-gray-50 rounded-2xl border border-gray-200 dashed">
+            <div className="py-12 text-center text-gray-400 bg-gray-50 rounded-2xl border border-gray-200 border-dashed">
               <p>No plants found matching your search.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {filtered.map((plant) => {
                 return (
-                  <div key={plant.id} className="bg-white border-2 border-gray-100 hover:border-gray-200 rounded-2xl p-4 transition-all">
+                  <div key={plant.id} className="bg-white border-2 border-gray-100 hover:border-gray-200 rounded-2xl p-4 transition-all flex flex-col justify-between">
                     <div className="flex items-start gap-3">
                       <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0">
                         {plant.image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img src={plant.image_url} alt={plant.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-forest-50 flex items-center justify-center">
@@ -131,13 +167,16 @@ export default function Step4PlantLibrary() {
                     
                     <div className="mt-3 space-y-2">
                       {plant.is_s_active && (
-                        <PlantSizeOption plant={plant} size="S" price={plant.price_s} isSelected={isSelected(plant.id, 'S')} addPlant={addPlant} removePlant={removePlant} />
+                        <PlantSizeOption plant={plant} size="S" price={plant.price_s || 0} isSelected={isSelected(plant.id, 'S')} addPlant={addPlant} removePlant={removePlant} />
                       )}
                       {plant.is_m_active && (
-                        <PlantSizeOption plant={plant} size="M" price={plant.price_m} isSelected={isSelected(plant.id, 'M')} addPlant={addPlant} removePlant={removePlant} />
+                        <PlantSizeOption plant={plant} size="M" price={plant.price_m || 0} isSelected={isSelected(plant.id, 'M')} addPlant={addPlant} removePlant={removePlant} />
                       )}
                       {plant.is_l_active && (
-                        <PlantSizeOption plant={plant} size="L" price={plant.price_l} isSelected={isSelected(plant.id, 'L')} addPlant={addPlant} removePlant={removePlant} />
+                        <PlantSizeOption plant={plant} size="L" price={plant.price_l || 0} isSelected={isSelected(plant.id, 'L')} addPlant={addPlant} removePlant={removePlant} />
+                      )}
+                      {!plant.is_s_active && !plant.is_m_active && !plant.is_l_active && (
+                         <div className="text-xs text-red-500 italic text-center py-2">No sizes available</div>
                       )}
                     </div>
                   </div>
@@ -153,7 +192,10 @@ export default function Step4PlantLibrary() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-gray-800">Selected Plants</h3>
               {selectedPlants.length > 1 && (
-                <button onClick={equalizeAllocations} className="text-xs text-forest-700 font-medium hover:underline">
+                <button
+                  onClick={equalizeAllocations}
+                  className="text-xs text-forest-700 font-medium hover:underline"
+                >
                   Auto-distribute
                 </button>
               )}
@@ -165,16 +207,32 @@ export default function Step4PlantLibrary() {
                 <p className="text-sm">No plants selected yet</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1">
                 {selectedPlants.map((sp) => (
-                  <SelectedPlantRow key={sp.plantId} sp={sp} onRemove={() => removePlant(sp.plant.id, sp.size)} onSpacingChange={(v) => updatePlantSpacing(sp.plant.id, sp.size, v)} onAllocChange={(v) => updatePlantAllocation(sp.plant.id, sp.size, v)} />
+                  <SelectedPlantRow
+                    key={sp.plantId}
+                    sp={sp}
+                    onRemove={() => removePlant(sp.plant.id, sp.size)}
+                    onSpacingChange={(v) => updatePlantSpacing(sp.plant.id, sp.size, v)}
+                    onAllocChange={(v) => updatePlantAllocation(sp.plant.id, sp.size, v)}
+                  />
                 ))}
 
-                <div className={cn('flex items-center justify-between p-3 rounded-xl text-sm font-semibold border', allocValid ? 'bg-green-50 border-green-200 text-green-700' : 'bg-amber-50 border-amber-200 text-amber-700')}>
+                {/* Allocation total */}
+                <div className={cn(
+                  'flex items-center justify-between p-3 rounded-xl text-sm font-semibold border',
+                  allocValid
+                    ? 'bg-green-50 border-green-200 text-green-700'
+                    : 'bg-amber-50 border-amber-200 text-amber-700'
+                )}>
                   {!allocValid && <AlertTriangle className="w-4 h-4 shrink-0" />}
-                  <span>Total allocation: {totalAlloc.toFixed(0)}%{!allocValid && ' (must equal 100%)'}</span>
+                  <span>
+                    Total allocation: {totalAlloc.toFixed(0)}%
+                    {!allocValid && ' (must equal 100%)'}
+                  </span>
                 </div>
 
+                {/* Summary */}
                 <div className="pt-3 border-t border-gray-200 space-y-1">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Total plants:</span>
@@ -253,4 +311,3 @@ function SelectedPlantRow({ sp, onRemove, onSpacingChange, onAllocChange }: { sp
     </div>
   )
 }
-

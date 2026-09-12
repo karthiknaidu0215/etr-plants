@@ -38,6 +38,11 @@ export async function runSecureSetup(formData: FormData) {
          await client.query(fs.readFileSync(sqlPath2, 'utf8'))
       }
 
+      const sqlPath3 = path.join(process.cwd(), 'supabase', 'migrations', '004_fix_rls.sql')
+      if (fs.existsSync(sqlPath3)) {
+         await client.query(fs.readFileSync(sqlPath3, 'utf8'))
+      }
+
       await client.end()
     } catch (e: unknown) {
       console.error('Migration failed:', e)

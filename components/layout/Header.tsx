@@ -90,6 +90,12 @@ export default function Header() {
                 Design My Farm
                 <ChevronRight className="w-4 h-4" />
               </Link>
+              <Link
+                href="/admin/login"
+                className="hidden lg:inline-flex items-center gap-2 border-2 border-forest-600 text-forest-700 bg-white/90 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-forest-50 transition-all"
+              >
+                Admin Login
+              </Link>
               <button
                 onClick={() => setMobileOpen(true)}
                 className={cn(
