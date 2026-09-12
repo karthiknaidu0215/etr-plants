@@ -1,4 +1,14 @@
+﻿const fs = require('fs')
+const path = require('path')
 
+const p = path.join(process.cwd(), 'stores', 'plannerStore.ts')
+let content = fs.readFileSync(p, 'utf8')
+
+// Clean up the duplicates in plannerStore.ts by doing a clean rewrite
+// I will just download the original and apply the changes properly or just overwrite the interface
+// Wait, I can just rewrite the whole file cleanly
+
+const cleanStore = `
 'use client'
 
 import { create } from 'zustand'
@@ -225,3 +235,7 @@ export const usePlannerStore = create<PlannerState>()(
     },
   }))
 )
+`
+
+fs.writeFileSync(p, cleanStore)
+console.log('Clean store updated')

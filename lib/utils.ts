@@ -1,15 +1,13 @@
-import { clsx, type ClassValue } from 'clsx'
+﻿import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import { EstimationParams, PlanCalculations, SelectedPlant } from './types'
+import { EstimationParams, PlanCalculations, SelectedPlant, SelectedAdditionalItem } from './types'
 
-// ── Tailwind class utility ────────────────────────────────────
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// ── Indian currency formatting ────────────────────────────────
 export function formatCurrency(amount: number): string {
-  if (isNaN(amount)) return '₹0'
+  if (isNaN(amount)) return ',10'
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
@@ -17,12 +15,10 @@ export function formatCurrency(amount: number): string {
   }).format(amount)
 }
 
-// ── Indian number formatting ──────────────────────────────────
 export function formatNumber(n: number): string {
   return new Intl.NumberFormat('en-IN').format(Math.round(n))
 }
 
-// ── Area conversions ──────────────────────────────────────────
 export const SQFT_PER_ACRE = 43560
 
 export function acreToSqFt(acres: number): number {
@@ -33,130 +29,108 @@ export function sqFtToAcre(sqFt: number): number {
   return sqFt / SQFT_PER_ACRE
 }
 
-// ── Plant count calculation ───────────────────────────────────
-// Plants = floor( (acres × 43560) / (spacing × spacing) )
 export function calculatePlantCount(allocatedAcres: number, spacingFt: number): number {
   if (spacingFt <= 0 || allocatedAcres <= 0) return 0
   const sqFt = allocatedAcres * SQFT_PER_ACRE
   return Math.floor(sqFt / (spacingFt * spacingFt))
 }
 
-// ── Plan ID generation ────────────────────────────────────────
 export function generatePlanId(): string {
   const year = new Date().getFullYear()
   const random = Math.floor(Math.random() * 9000) + 1000
   return `ETR-PLAN-${year}-${random}`
 }
 
-// ── Lead ID generation ────────────────────────────────────────
 export function generateLeadId(): string {
   const year = new Date().getFullYear()
   const random = Math.floor(Math.random() * 9000) + 1000
   return `ETR-LEAD-${year}-${random}`
 }
 
-// ── Full plan calculations ────────────────────────────────────
+export const PLANTATION_COLORS = [
+  '#4ade80', '#2dd4bf', '#60a5fa', '#a78bfa',
+  '#f472b6', '#fb923c', '#facc15', '#a3e635',
+  '#34d399', '#38bdf8', '#818cf8', '#c084fc',
+]
+
 export function calculatePlan(
   landAcres: number,
   selectedPlants: SelectedPlant[],
+  selectedAdditionalItems: SelectedAdditionalItem[],
   params: EstimationParams
 ): PlanCalculations {
-  const plantableAcres = landAcres * (params.plantation_area_percent / 100)
+  const totalAlloc = selectedPlants.reduce((sum, p) => sum + p.allocationPercentage, 0)
+  const allocValid = Math.abs(totalAlloc - 100) < 0.1
 
   let totalPlants = 0
   let plantCost = 0
   let expectedAnnualIncome = 0
-  let totalAllocationPercent = 0
+  let usedLandAcres = 0
+
+  const plantableAcres = landAcres * (params.plantation_area_percent / 100)
 
   selectedPlants.forEach((sp) => {
-    totalAllocationPercent += sp.allocationPercentage
-    const allocatedAcres = (sp.allocationPercentage / 100) * plantableAcres
-    const plantCount = calculatePlantCount(allocatedAcres, sp.spacing)
-    const pCost = plantCount * sp.plant.price_per_plant
+    const allocated = plantableAcres * (sp.allocationPercentage / 100)
+    sp.allocatedAcres = allocated
+    sp.plantCount = calculatePlantCount(allocated, sp.spacing)
+    
+    const price = sp.size === 'S' ? (sp.plant.price_s || 0) : sp.size === 'M' ? (sp.plant.price_m || 0) : (sp.plant.price_l || 0)
+    sp.plantCost = sp.plantCount * price
+    
+    const incomePerPlant = sp.plant.income_assumptions?.annual_income_per_plant || 0
+    sp.estimatedAnnualIncome = sp.plantCount * incomePerPlant
 
-    let annualIncome = 0
-    if (sp.plant.income_assumptions?.annual_income_per_plant) {
-      annualIncome = plantCount * sp.plant.income_assumptions.annual_income_per_plant
-    } else if (
-      sp.plant.income_assumptions?.yield_kg_per_plant &&
-      sp.plant.income_assumptions?.price_per_kg
-    ) {
-      annualIncome =
-        plantCount *
-        sp.plant.income_assumptions.yield_kg_per_plant *
-        sp.plant.income_assumptions.price_per_kg
-    }
-
-    totalPlants += plantCount
-    plantCost += pCost
-    expectedAnnualIncome += annualIncome
-
-    return { ...sp, allocatedAcres, plantCount, plantCost: pCost, estimatedAnnualIncome: annualIncome }
+    totalPlants += sp.plantCount
+    plantCost += sp.plantCost
+    expectedAnnualIncome += sp.estimatedAnnualIncome
+    usedLandAcres += allocated
   })
 
   const fertilizerCost = landAcres * params.fertilizer_cost_per_acre
   const setupCost = landAcres * params.setup_cost_per_acre
-  const labourCost = landAcres * params.labour_cost_per_acre
-  const otherCosts = landAcres * params.other_costs_per_acre
-  const totalInvestment = plantCost + fertilizerCost + setupCost + labourCost + otherCosts
 
-  const allocationValid = Math.abs(totalAllocationPercent - 100) < 0.01 || selectedPlants.length === 0
+  let labourCost = 0
+  let honeyBeeBoxCost = 0
+  let otherCosts = landAcres * params.other_costs_per_acre
+
+  selectedAdditionalItems.forEach(item => {
+    item.cost = item.quantity * item.item.price
+    if (item.item.category === 'labour') {
+      labourCost += item.cost
+    } else if (item.item.category === 'honey_bee_box') {
+      honeyBeeBoxCost += item.cost
+    } else {
+      otherCosts += item.cost
+    }
+  })
+
+  const totalInvestment = plantCost + fertilizerCost + setupCost + labourCost + honeyBeeBoxCost + otherCosts
 
   return {
     totalLandAcres: landAcres,
     plantableAcres,
-    usedLandAcres: plantableAcres,
-    remainingLandAcres: landAcres - plantableAcres,
+    usedLandAcres,
+    remainingLandAcres: landAcres - usedLandAcres,
     totalPlants,
     plantCost,
     fertilizerCost,
     setupCost,
     labourCost,
+    honeyBeeBoxCost,
     otherCosts,
     totalInvestment,
     expectedAnnualIncome,
-    allocationValid,
-    totalAllocationPercent,
+    allocationValid: allocValid,
+    totalAllocationPercent: totalAlloc,
   }
 }
-
-// ── Date formatting ───────────────────────────────────────────
-export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-IN', {
-    year: 'numeric',
-    month: 'long',
+export function formatDate(dateString: string): string {
+  return new Intl.DateTimeFormat('en-IN', {
     day: 'numeric',
-  })
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true,
+  }).format(new Date(dateString))
 }
-
-// ── Truncate text ─────────────────────────────────────────────
-export function truncate(str: string, maxLen: number): string {
-  if (str.length <= maxLen) return str
-  return str.slice(0, maxLen) + '...'
-}
-
-// ── Zone colors for farm canvas ───────────────────────────────
-export const ZONE_COLORS: Record<string, string> = {
-  boundary: '#1a4731',
-  farmhouse: '#8b5e3c',
-  entrance: '#f59e0b',
-  road: '#6b7280',
-  water: '#3b82f6',
-  plantation: '#2d6a4f',
-  open: '#d1fae5',
-}
-
-// ── Plant category colors ─────────────────────────────────────
-export const CATEGORY_COLORS: Record<string, string> = {
-  Fruit: '#f97316',
-  Wood: '#92400e',
-  Avenue: '#7c3aed',
-  Flowers: '#ec4899',
-  Landscaping: '#10b981',
-}
-
-// ── Plantation block colors (for multiple plants on canvas) ──
-export const PLANTATION_COLORS = [
-  '#2d6a4f', '#52b788', '#1a4731', '#40916c', '#74c69d',
-  '#d8f3dc', '#b7e4c7', '#95d5b2', '#27ae60', '#16a085',
-]

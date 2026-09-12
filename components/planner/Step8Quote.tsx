@@ -44,6 +44,7 @@ export default function Step8Quote() {
         selected_plants: selectedPlants.map((sp) => ({
           plant_id: sp.plantId,
           plant_name: sp.plant.name,
+          plant_size: sp.size,
           spacing: sp.spacing,
           quantity: sp.plantCount,
           allocation_percentage: sp.allocationPercentage,

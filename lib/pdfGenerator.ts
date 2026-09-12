@@ -13,7 +13,7 @@ declare global {
 
 export async function generatePDF(plannerState: ReturnType<typeof usePlannerStore.getState>) {
   const {
-    planId, landAcres, selectedState, selectedDistrict, selectedMandal,
+        planId, landAcres, selectedState, selectedDistrict, selectedMandal,
     selectedPlants, calculations,
   } = plannerState
 

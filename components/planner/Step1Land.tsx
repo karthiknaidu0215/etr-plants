@@ -88,16 +88,7 @@ export default function Step1Land() {
               {p} {p === 1 ? 'Acre' : 'Acres'}
             </button>
           ))}
-          <button
-            onClick={() => setLandAcres(30)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 border-dashed transition-all ${
-              landAcres > 25
-                ? 'bg-forest-700 border-forest-700 text-white'
-                : 'border-gray-300 text-gray-500 hover:border-forest-700 hover:text-forest-700'
-            }`}
-          >
-            Custom (25+)
-          </button>
+          
         </div>
       </div>
 

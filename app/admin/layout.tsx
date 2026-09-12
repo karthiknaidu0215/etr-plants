@@ -18,6 +18,8 @@ const adminLinks = [
   { href: '/admin/locations', label: 'Locations', icon: MapPin },
   { href: '/admin/plans', label: 'Plans', icon: FileText },
   { href: '/admin/leads', label: 'Leads & Quotes', icon: MessageSquare },
+  { href: '/admin/fertilizers', label: 'Fertilizers', icon: Leaf },
+  { href: '/admin/additional-items', label: 'Additional Items', icon: Grid3X3 },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -27,7 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // If on login page, don't show admin sidebar
-  if (pathname === '/admin/login') {
+  if (pathname === '/admin/login' || pathname === '/admin/secure-setup') {
     return <>{children}</>
   }
 

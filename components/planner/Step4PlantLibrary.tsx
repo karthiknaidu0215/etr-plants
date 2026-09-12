@@ -1,11 +1,11 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useMemo } from 'react'
 import { usePlannerStore } from '@/stores/plannerStore'
 import { createClient } from '@/lib/supabase/client'
 import { Plant, SelectedPlant } from '@/lib/types'
 import { formatCurrency, formatNumber } from '@/lib/utils'
-import { Leaf, Search, Plus, Minus, Trash2, Loader2, AlertTriangle, SlidersHorizontal } from 'lucide-react'
+import { Leaf, Search, Trash2, Loader2, AlertTriangle, SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function Step4PlantLibrary() {
@@ -32,46 +32,44 @@ export default function Step4PlantLibrary() {
       query = query.in('category_id', selectedTypeIds)
     }
 
-    query.then(({ data, error: err }) => {
+    query.then(({ data, error }) => {
+      if (error) {
+        console.error('Error fetching plants:', error)
+        setError(true)
+      } else {
+        setAllPlants(data as Plant[])
+      }
       setLoading(false)
-      if (err) setError(true)
-      else setAllPlants(data || [])
     })
   }, [selectedTypeIds])
 
   const filtered = useMemo(() => {
-    let list = [...allPlants]
-    if (search) {
-      const q = search.toLowerCase()
-      list = list.filter((p) => p.name.toLowerCase().includes(q))
-    }
-    list.sort((a, b) => {
-      if (sortBy === 'price') return a.price_per_plant - b.price_per_plant
-      if (sortBy === 'spacing') return a.default_spacing - b.default_spacing
-      return a.name.localeCompare(b.name)
-    })
-    return list
+    return allPlants
+      .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+      .sort((a, b) => {
+        if (sortBy === 'name') return a.name.localeCompare(b.name)
+        if (sortBy === 'price') return (a.price_m || 0) - (b.price_m || 0)
+        if (sortBy === 'spacing') return a.default_spacing - b.default_spacing
+        return 0
+      })
   }, [allPlants, search, sortBy])
 
-  const isSelected = (id: string) => selectedPlants.some((sp) => sp.plantId === id)
-  const totalAlloc = selectedPlants.reduce((s, sp) => s + sp.allocationPercentage, 0)
-  const allocValid = Math.abs(totalAlloc - 100) < 0.1 || selectedPlants.length === 0
+  const isSelected = (id: string, size: 'S'|'M'|'L') => selectedPlants.some((p) => p.plantId === id + '-' + size)
+
+  const allocValid = calculations.allocationValid
+  const totalAlloc = calculations.totalAllocationPercent
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="text-center mb-8">
-        <div className="w-14 h-14 bg-forest-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Leaf className="w-7 h-7 text-forest-700" />
-        </div>
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Choose Your Plants</h2>
-        <p className="text-gray-500">Select plants and set spacing — plant count updates live</p>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-black text-gray-900">Select Plants & Quantities</h2>
+        <p className="text-gray-500 mt-1">Choose the specific plants and their sizes for your farm.</p>
       </div>
 
-      <div className="grid lg:grid-cols-5 gap-6">
-        {/* Left: Plant catalog */}
-        <div className="lg:col-span-3">
-          {/* Search + sort */}
-          <div className="flex gap-3 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+        {/* Left: Library */}
+        <div className="lg:col-span-3 space-y-4">
+          <div className="flex gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -79,52 +77,45 @@ export default function Step4PlantLibrary() {
                 placeholder="Search plants..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-forest-700 focus:outline-none"
+                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-forest-500"
               />
             </div>
             <div className="relative">
-              <SlidersHorizontal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'name' | 'price' | 'spacing')}
-                className="pl-9 pr-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-forest-700 focus:outline-none appearance-none bg-white"
+                className="pl-8 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-forest-500 appearance-none"
               >
-                <option value="name">Sort: Name</option>
-                <option value="price">Sort: Price</option>
-                <option value="spacing">Sort: Spacing</option>
+                <option value="name">Name A-Z</option>
+                <option value="price">Lowest Price</option>
+                <option value="spacing">Tightest Spacing</option>
               </select>
+              <SlidersHorizontal className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
             </div>
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-16 gap-3 text-gray-500">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Loading plants…</span>
+            <div className="py-12 flex flex-col items-center justify-center text-forest-600">
+              <Loader2 className="w-8 h-8 animate-spin mb-2" />
+              <p className="text-sm font-medium">Loading library...</p>
             </div>
           ) : error ? (
-            <p className="text-center text-red-500 py-8">Unable to load plant data. Please try again.</p>
+            <div className="py-12 text-center text-red-500 bg-red-50 rounded-2xl border border-red-100">
+              <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p>Failed to load plant library.</p>
+            </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
-              <Leaf className="w-10 h-10 mx-auto mb-3 opacity-40" />
-              <p>No plants found{search ? ` for "${search}"` : ''}.</p>
+            <div className="py-12 text-center text-gray-400 bg-gray-50 rounded-2xl border border-gray-200 dashed">
+              <p>No plants found matching your search.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[500px] overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {filtered.map((plant) => {
-                const sel = isSelected(plant.id)
                 return (
-                  <div
-                    key={plant.id}
-                    className={cn(
-                      'bg-white border-2 rounded-2xl p-4 transition-all',
-                      sel ? 'border-forest-700 shadow-md' : 'border-gray-100 hover:border-gray-200'
-                    )}
-                  >
+                  <div key={plant.id} className="bg-white border-2 border-gray-100 hover:border-gray-200 rounded-2xl p-4 transition-all">
                     <div className="flex items-start gap-3">
-                      {/* Thumb */}
                       <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0">
                         {plant.image_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
                           <img src={plant.image_url} alt={plant.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-forest-50 flex items-center justify-center">
@@ -134,31 +125,21 @@ export default function Step4PlantLibrary() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-gray-900 text-sm leading-tight">{plant.name}</p>
-                        <p className="text-xs text-gray-500 mb-1">
-                          Spacing: {plant.default_spacing} ft &bull; {formatCurrency(plant.price_per_plant)}/plant
-                        </p>
-                        {plant.income_assumptions?.annual_income_per_plant && (
-                          <p className="text-xs text-green-600 font-medium">
-                            Est. income: {formatCurrency(plant.income_assumptions.annual_income_per_plant)}/plant/yr
-                          </p>
-                        )}
+                        <p className="text-xs text-gray-500 mb-1">Spacing: {plant.default_spacing} ft</p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => sel ? removePlant(plant.id) : addPlant(plant)}
-                      className={cn(
-                        'mt-3 w-full py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1',
-                        sel
-                          ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
-                          : 'bg-forest-700 text-white hover:bg-forest-800'
+                    
+                    <div className="mt-3 space-y-2">
+                      {plant.is_s_active && (
+                        <PlantSizeOption plant={plant} size="S" price={plant.price_s} isSelected={isSelected(plant.id, 'S')} addPlant={addPlant} removePlant={removePlant} />
                       )}
-                    >
-                      {sel ? (
-                        <><Minus className="w-3.5 h-3.5" /> Remove</>
-                      ) : (
-                        <><Plus className="w-3.5 h-3.5" /> Add Plant</>
+                      {plant.is_m_active && (
+                        <PlantSizeOption plant={plant} size="M" price={plant.price_m} isSelected={isSelected(plant.id, 'M')} addPlant={addPlant} removePlant={removePlant} />
                       )}
-                    </button>
+                      {plant.is_l_active && (
+                        <PlantSizeOption plant={plant} size="L" price={plant.price_l} isSelected={isSelected(plant.id, 'L')} addPlant={addPlant} removePlant={removePlant} />
+                      )}
+                    </div>
                   </div>
                 )
               })}
@@ -172,10 +153,7 @@ export default function Step4PlantLibrary() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-gray-800">Selected Plants</h3>
               {selectedPlants.length > 1 && (
-                <button
-                  onClick={equalizeAllocations}
-                  className="text-xs text-forest-700 font-medium hover:underline"
-                >
+                <button onClick={equalizeAllocations} className="text-xs text-forest-700 font-medium hover:underline">
                   Auto-distribute
                 </button>
               )}
@@ -189,30 +167,14 @@ export default function Step4PlantLibrary() {
             ) : (
               <div className="space-y-4">
                 {selectedPlants.map((sp) => (
-                  <SelectedPlantRow
-                    key={sp.plantId}
-                    sp={sp}
-                    onRemove={() => removePlant(sp.plantId)}
-                    onSpacingChange={(v) => updatePlantSpacing(sp.plantId, v)}
-                    onAllocChange={(v) => updatePlantAllocation(sp.plantId, v)}
-                  />
+                  <SelectedPlantRow key={sp.plantId} sp={sp} onRemove={() => removePlant(sp.plant.id, sp.size)} onSpacingChange={(v) => updatePlantSpacing(sp.plant.id, sp.size, v)} onAllocChange={(v) => updatePlantAllocation(sp.plant.id, sp.size, v)} />
                 ))}
 
-                {/* Allocation total */}
-                <div className={cn(
-                  'flex items-center justify-between p-3 rounded-xl text-sm font-semibold border',
-                  allocValid
-                    ? 'bg-green-50 border-green-200 text-green-700'
-                    : 'bg-amber-50 border-amber-200 text-amber-700'
-                )}>
+                <div className={cn('flex items-center justify-between p-3 rounded-xl text-sm font-semibold border', allocValid ? 'bg-green-50 border-green-200 text-green-700' : 'bg-amber-50 border-amber-200 text-amber-700')}>
                   {!allocValid && <AlertTriangle className="w-4 h-4 shrink-0" />}
-                  <span>
-                    Total allocation: {totalAlloc.toFixed(0)}%
-                    {!allocValid && ' (must equal 100%)'}
-                  </span>
+                  <span>Total allocation: {totalAlloc.toFixed(0)}%{!allocValid && ' (must equal 100%)'}</span>
                 </div>
 
-                {/* Summary */}
                 <div className="pt-3 border-t border-gray-200 space-y-1">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Total plants:</span>
@@ -232,62 +194,52 @@ export default function Step4PlantLibrary() {
   )
 }
 
-function SelectedPlantRow({
-  sp, onRemove, onSpacingChange, onAllocChange,
-}: {
-  sp: SelectedPlant
-  onRemove: () => void
-  onSpacingChange: (v: number) => void
-  onAllocChange: (v: number) => void
-}) {
+function PlantSizeOption({ plant, size, price, isSelected, addPlant, removePlant }: { plant: Plant, size: 'S'|'M'|'L', price: number, isSelected: boolean, addPlant: (p: Plant, s: 'S'|'M'|'L') => void, removePlant: (id: string, s: 'S'|'M'|'L') => void }) {
+  return (
+    <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+      <div className="flex flex-col">
+        <span className="text-sm font-bold text-gray-800">Size {size}</span>
+        <span className="text-xs font-semibold text-forest-600">{formatCurrency(price)}/ea</span>
+      </div>
+      <button
+        onClick={() => isSelected ? removePlant(plant.id, size) : addPlant(plant, size)}
+        className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all", isSelected ? "bg-red-100 text-red-600 hover:bg-red-200" : "bg-forest-600 text-white hover:bg-forest-700")}
+      >
+        {isSelected ? "Remove" : "Select"}
+      </button>
+    </div>
+  )
+}
+
+function SelectedPlantRow({ sp, onRemove, onSpacingChange, onAllocChange }: { sp: SelectedPlant, onRemove: () => void, onSpacingChange: (v: number) => void, onAllocChange: (v: number) => void }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="font-bold text-sm text-gray-900">{sp.plant.name}</p>
+        <div>
+          <p className="font-bold text-sm text-gray-900">{sp.plant.name}</p>
+          <p className="text-xs text-forest-600 font-semibold">Size {sp.size}</p>
+        </div>
         <button onClick={onRemove} className="text-gray-400 hover:text-red-500 transition-colors">
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Spacing */}
       <div>
         <div className="flex justify-between text-xs text-gray-500 mb-1">
           <span>Spacing</span>
           <span className="font-bold text-gray-800">{sp.spacing} ft</span>
         </div>
-        <input
-          type="range"
-          min={sp.plant.min_spacing || 3}
-          max={sp.plant.max_spacing || 20}
-          step={1}
-          value={sp.spacing}
-          onChange={(e) => onSpacingChange(parseFloat(e.target.value))}
-          className="w-full"
-        />
-        <div className="flex justify-between text-xs text-gray-400 mt-0.5">
-          <span>{sp.plant.min_spacing || 3} ft</span>
-          <span>{sp.plant.max_spacing || 20} ft</span>
-        </div>
+        <input type="range" min={sp.plant.min_spacing || 3} max={sp.plant.max_spacing || 20} step={1} value={sp.spacing} onChange={(e) => onSpacingChange(parseFloat(e.target.value))} className="w-full" />
       </div>
 
-      {/* Allocation */}
       <div>
         <div className="flex justify-between text-xs text-gray-500 mb-1">
           <span>Land allocation</span>
           <span className="font-bold text-gray-800">{sp.allocationPercentage.toFixed(0)}%</span>
         </div>
-        <input
-          type="range"
-          min={5}
-          max={100}
-          step={5}
-          value={sp.allocationPercentage}
-          onChange={(e) => onAllocChange(parseFloat(e.target.value))}
-          className="w-full"
-        />
+        <input type="range" min={0} max={100} step={5} value={sp.allocationPercentage} onChange={(e) => onAllocChange(parseFloat(e.target.value))} className="w-full" />
       </div>
 
-      {/* Live stats */}
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-forest-50 rounded-lg px-3 py-2 text-center">
           <p className="text-xs text-gray-500">Plants</p>
@@ -301,3 +253,4 @@ function SelectedPlantRow({
     </div>
   )
 }
+
