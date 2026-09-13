@@ -153,7 +153,7 @@ export default function PlannerPage() {
                 disabled={!canProceed()}
                 className="flex items-center gap-2 px-7 py-3 rounded-xl bg-forest-700 text-white font-bold hover:bg-forest-800 transition-all shadow-md hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {currentStep === 4 ? 'Design My Farm' : currentStep === 7 ? 'Request Quote' : 'Next'}
+                {currentStep === 4 ? 'Visualize Farm' : currentStep === 7 ? 'Request Quote' : 'Next'}
                 <ChevronRight className="w-4 h-4" />
               </button>
             )}

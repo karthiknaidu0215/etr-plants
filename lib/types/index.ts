@@ -204,6 +204,11 @@ export interface FarmZone {
   label: string
   plant_id?: string
   plant_name?: string
+  spacing?: number
+  plantCount?: number
+  plantSize?: 'S' | 'M' | 'L'
+  topDownIconUrl?: string
+  visualAssetUrl?: string
   x: number
   y: number
   width: number
