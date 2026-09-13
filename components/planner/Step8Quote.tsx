@@ -67,7 +67,7 @@ export default function Step8Quote() {
         location_mandal: selectedMandal || null,
         selected_plants: leadData.selected_plants,
         total_investment: usePlannerStore.getState().calculations.totalInvestment,
-        expected_income: usePlannerStore.getState().calculations.totalIncome
+        expected_income: usePlannerStore.getState().calculations.expectedAnnualIncome
       })
 
       // 2. Insert Farm Design if available

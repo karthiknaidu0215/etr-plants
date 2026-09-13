@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link'
 import { CheckCircle2, ChevronRight, Leaf } from 'lucide-react'
+import { useWebsiteContent } from '@/hooks/useWebsiteContent'
 
 const points = [
   'Expert plantation consultants with 10+ years field experience',
@@ -11,6 +14,9 @@ const points = [
 ]
 
 export default function AboutSection() {
+  const content = useWebsiteContent()
+  const siteName = content.website_name || 'ETR Plants'
+
   return (
     <section className="py-20 bg-cream-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,11 +43,14 @@ export default function AboutSection() {
               </div>
               <div className="relative z-10 h-full flex items-center justify-center">
                 <div className="text-center text-white p-8">
-                  <div className="w-20 h-20 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Leaf className="w-10 h-10 text-white" />
-                  </div>
-                  <p className="text-2xl font-bold">ETR Plants</p>
-                  <p className="text-white/70 text-sm mt-2">Grow with Confidence</p>
+                  {content.logo_url
+                    ? <img src={content.logo_url} alt={siteName} className="w-20 h-20 rounded-2xl object-contain mx-auto mb-4" />
+                    : <div className="w-20 h-20 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <Leaf className="w-10 h-10 text-white" />
+                      </div>
+                  }
+                  <p className="text-2xl font-bold">{siteName}</p>
+                  <p className="text-white/70 text-sm mt-2">{content.tagline || 'Grow with Confidence'}</p>
                 </div>
               </div>
             </div>
@@ -56,16 +65,16 @@ export default function AboutSection() {
           {/* Content */}
           <div>
             <p className="text-accent-600 font-semibold text-sm uppercase tracking-widest mb-3">
-              About ETR Plants
+              About {siteName}
             </p>
             <h2 className="text-3xl sm:text-4xl font-bold text-forest-700 mb-5 leading-tight">
-              Your Partner in Smart Farm Planning
+              {content.about_title || 'Your Partner in Smart Farm Planning'}
             </h2>
             <p className="text-gray-600 leading-relaxed mb-6">
-              ETR Plants is a professional plantation planning and plant supply company serving farmers and landowners across Andhra Pradesh, Telangana, and Tamil Nadu. We combine agricultural expertise with technology to help you make the best decisions for your land.
+              {content.about_text || 'ETR Plants is a professional plantation planning and plant supply company serving farmers and landowners across Andhra Pradesh, Telangana, and Tamil Nadu.'}
             </p>
             <p className="text-gray-600 leading-relaxed mb-8">
-              Our interactive plantation planner takes the guesswork out of farming — from choosing the right plants for your region to calculating your exact investment and expected income.
+              {content.about_subtext || 'Our interactive plantation planner takes the guesswork out of farming ? from choosing the right plants for your region to calculating your exact investment and expected income.'}
             </p>
 
             <ul className="space-y-3 mb-8">

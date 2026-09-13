@@ -1,4 +1,4 @@
-﻿export interface Category {
+export interface Category {
   id: string
   name: string
   description: string | null
@@ -37,6 +37,8 @@ export interface Plant {
   category_id: string
   category?: Category
   description: string | null
+  visual_asset_url?: string | null
+  top_down_icon_url?: string | null
   default_spacing: number
   min_spacing: number
   max_spacing: number

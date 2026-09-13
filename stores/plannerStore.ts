@@ -54,6 +54,7 @@ interface PlannerState {
   addFarmZone: (zone: FarmZone) => void
   updateFarmZone: (id: string, zone: Partial<FarmZone>) => void
   deleteFarmZone: (id: string) => void
+  setFarmZones: (zones: FarmZone[]) => void
   clearZones: () => void
   
   addAdditionalItem: (item: AdditionalItem, quantity: number) => void
@@ -174,6 +175,7 @@ export const usePlannerStore = create<PlannerState>()(
     deleteFarmZone: (id) => set((s) => {
       s.farmZones = s.farmZones.filter(z => z.id !== id)
     }),
+    setFarmZones: (zones) => set((s) => { s.farmZones = zones }),
     clearZones: () => set((s) => { s.farmZones = [] }),
 
     addAdditionalItem: (item, quantity) => {

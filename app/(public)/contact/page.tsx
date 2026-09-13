@@ -3,13 +3,15 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { generateLeadId } from '@/lib/utils'
-import { Send, CheckCircle2, Loader2, Phone, Mail, MapPin } from 'lucide-react'
+import { Send, CheckCircle2, Loader2, Phone, Mail, MapPin, MessageCircle } from 'lucide-react'
+import { useWebsiteContent } from '@/hooks/useWebsiteContent'
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', phone: '', email: '', message: '' })
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const content = useWebsiteContent()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,17 +54,21 @@ export default function ContactPage() {
             <h2 className="text-2xl font-bold text-forest-700 mb-6">Get in Touch</h2>
             <div className="space-y-5">
               {[
-                { icon: Phone, label: 'Phone', value: 'Contact details configured by admin' },
-                { icon: Mail, label: 'Email', value: 'Email configured by admin' },
-                { icon: MapPin, label: 'Location', value: 'Address configured by admin' },
-              ].map(({ icon: Icon, label, value }) => (
+                { icon: Phone, label: 'Phone', value: content.phone, href: content.phone ? `tel:${content.phone}` : undefined },
+                { icon: MessageCircle, label: 'WhatsApp', value: content.whatsapp, href: content.whatsapp ? `https://wa.me/${content.whatsapp.replace(/[^0-9]/g, '')}` : undefined },
+                { icon: Mail, label: 'Email', value: content.email, href: content.email ? `mailto:${content.email}` : undefined },
+                { icon: MapPin, label: 'Location', value: content.address, href: undefined },
+              ].filter(item => item.value).map(({ icon: Icon, label, value, href }) => (
                 <div key={label} className="flex items-start gap-4">
                   <div className="w-11 h-11 bg-forest-50 rounded-xl flex items-center justify-center shrink-0">
                     <Icon className="w-5 h-5 text-forest-700" />
                   </div>
                   <div>
                     <p className="font-semibold text-gray-700">{label}</p>
-                    <p className="text-gray-500 text-sm">{value}</p>
+                    {href
+                      ? <a href={href} target={href.startsWith('https') ? '_blank' : undefined} rel="noopener noreferrer" className="text-forest-700 hover:underline text-sm">{value}</a>
+                      : <p className="text-gray-500 text-sm">{value}</p>
+                    }
                   </div>
                 </div>
               ))}

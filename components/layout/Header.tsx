@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Leaf, Menu, X, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useWebsiteContent } from '@/hooks/useWebsiteContent'
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -19,6 +20,7 @@ export default function Header() {
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const content = useWebsiteContent()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -31,6 +33,17 @@ export default function Header() {
 
   const isAdmin = pathname?.startsWith('/admin')
   if (isAdmin) return null
+
+  const siteName = content.website_name || 'ETR Plants'
+  const logoUrl = content.logo_url || ''
+
+  const LogoMark = ({ size = 9, iconSize = 5 }: { size?: number; iconSize?: number }) => (
+    logoUrl
+      ? <img src={logoUrl} alt={siteName} className={`w-${size} h-${size} rounded-lg object-contain`} />
+      : <div className={`w-${size} h-${size} bg-forest-700 rounded-lg flex items-center justify-center group-hover:bg-forest-800 transition-colors`}>
+          <Leaf className={`w-${iconSize} h-${iconSize} text-white`} />
+        </div>
+  )
 
   return (
     <>
@@ -46,16 +59,17 @@ export default function Header() {
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-9 h-9 bg-forest-700 rounded-lg flex items-center justify-center group-hover:bg-forest-800 transition-colors">
-                <Leaf className="w-5 h-5 text-white" />
-              </div>
+              <LogoMark size={9} iconSize={5} />
               <span
                 className={cn(
                   'text-xl font-bold tracking-tight transition-colors',
                   scrolled ? 'text-forest-700' : 'text-white'
                 )}
               >
-                ETR <span className={scrolled ? 'text-accent-500' : 'text-accent-400'}>Plants</span>
+                {siteName.includes(' ')
+                  ? <>{siteName.split(' ')[0]} <span className={scrolled ? 'text-accent-500' : 'text-accent-400'}>{siteName.split(' ').slice(1).join(' ')}</span></>
+                  : siteName
+                }
               </span>
             </Link>
 
@@ -124,10 +138,13 @@ export default function Header() {
             {/* Drawer Header */}
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-forest-700 rounded-lg flex items-center justify-center">
-                  <Leaf className="w-4 h-4 text-white" />
-                </div>
-                <span className="font-bold text-forest-700">ETR Plants</span>
+                {logoUrl
+                  ? <img src={logoUrl} alt={siteName} className="w-8 h-8 rounded-lg object-contain" />
+                  : <div className="w-8 h-8 bg-forest-700 rounded-lg flex items-center justify-center">
+                      <Leaf className="w-4 h-4 text-white" />
+                    </div>
+                }
+                <span className="font-bold text-forest-700">{siteName}</span>
               </div>
               <button
                 onClick={() => setMobileOpen(false)}

@@ -30,6 +30,8 @@ export default function AdminPlantsPage() {
   const fields: FieldDef[] = [
     { key: 'name', label: 'Plant Name', type: 'text', required: true },
     { key: 'category_id', label: 'Category ID (UUID)', type: 'text', required: true }, // Simple implementation
+    { key: 'top_down_icon_url', label: 'Top-Down Visual Icon (Farm Design)', type: 'image', bucket: 'plant_assets' },
+    { key: 'visual_asset_url', label: 'Main Plant Image', type: 'image', bucket: 'plant_assets' },
     { key: 'description', label: 'Description', type: 'textarea' },
     { key: 'default_spacing', label: 'Default Spacing (ft)', type: 'number', required: true },
     { key: 'min_spacing', label: 'Min Spacing (ft)', type: 'number', required: true },

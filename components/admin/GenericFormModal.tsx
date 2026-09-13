@@ -7,8 +7,9 @@ import { X, Save, Loader2 } from 'lucide-react'
 export interface FieldDef {
   key: string
   label: string
-  type: 'text' | 'number' | 'boolean' | 'textarea'
+  type: 'text' | 'number' | 'boolean' | 'textarea' | 'image'
   required?: boolean
+  bucket?: string
 }
 
 interface GenericModalProps {
@@ -59,8 +60,38 @@ export default function GenericFormModal({ isOpen, onClose, onSave, initialData,
                   <input type="checkbox" checked={formData[f.key] || false} onChange={e => setFormData({...formData, [f.key]: e.target.checked})} className="w-4 h-4 text-forest-600 rounded border-gray-300" />
                 ) : f.type === 'textarea' ? (
                   <textarea required={f.required} value={formData[f.key] || ''} onChange={e => setFormData({...formData, [f.key]: e.target.value})} className="w-full border-gray-300 rounded-lg p-2 text-sm focus:ring-forest-500 focus:border-forest-500 border" rows={3} />
-                ) : (
+                ) : f.type !== 'image' ? (
                   <input required={f.required} type={f.type} value={formData[f.key] || ''} onChange={e => setFormData({...formData, [f.key]: f.type === 'number' ? parseFloat(e.target.value) : e.target.value})} className="w-full border-gray-300 rounded-lg p-2 text-sm focus:ring-forest-500 focus:border-forest-500 border" />
+                ) : null}
+                {f.type === 'image' && (
+                  <div>
+                    {formData[f.key] && (
+                      <div className="mb-2 relative w-32 h-32">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={formData[f.key]} alt="Preview" className="w-full h-full object-cover rounded-lg border" />
+                        <button type="button" onClick={() => setFormData({...formData, [f.key]: ''})} className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full"><X className="w-4 h-4"/></button>
+                      </div>
+                    )}
+                    <input type="file" accept="image/*" onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      setSaving(true)
+                      try {
+                        const { createClient } = await import('@/lib/supabase/client')
+                        const supabase = createClient()
+                        const fileExt = file.name.split('.').pop()
+                        const fileName = `${Math.random()}.${fileExt}`
+                        const { data, error } = await supabase.storage.from(f.bucket || 'plant_assets').upload(fileName, file)
+                        if (error) throw error
+                        const { data: { publicUrl } } = supabase.storage.from(f.bucket || 'plant_assets').getPublicUrl(fileName)
+                        setFormData({...formData, [f.key]: publicUrl})
+                      } catch (err: any) {
+                        setError(err.message || 'Error uploading image')
+                      } finally {
+                        setSaving(false)
+                      }
+                    }} className="text-sm" />
+                  </div>
                 )}
               </div>
             ))}

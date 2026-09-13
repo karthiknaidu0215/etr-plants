@@ -2,30 +2,31 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Leaf, Phone, Mail, MapPin } from 'lucide-react'
+import { Leaf, Phone, Mail, MapPin, MessageCircle } from 'lucide-react'
+import { useWebsiteContent } from '@/hooks/useWebsiteContent'
 
-const footerLinks = {
-  quickLinks: [
-    { href: '/', label: 'Home' },
-    { href: '/plants', label: 'Plants Library' },
-    { href: '/planner', label: 'Plantation Planner' },
-    { href: '/projects', label: 'Projects' },
-    { href: '/about', label: 'About Us' },
-    { href: '/contact', label: 'Contact' },
-  ],
-  services: [
-    'Plantation Planning',
-    'Plant Selection',
-    'Farm Layout Design',
-    'Investment Estimation',
-    'Maintenance Planning',
-    'Expected Income Analysis',
-  ],
-}
+const quickLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/plants', label: 'Plants Library' },
+  { href: '/planner', label: 'Plantation Planner' },
+  { href: '/projects', label: 'Projects' },
+  { href: '/about', label: 'About Us' },
+  { href: '/contact', label: 'Contact' },
+]
 
 export default function Footer() {
   const pathname = usePathname()
+  const content = useWebsiteContent()
   if (pathname?.startsWith('/admin')) return null
+
+  const siteName = content.website_name || 'ETR Plants'
+  const logoUrl = content.logo_url || ''
+
+  const socialLinks = [
+    { key: 'facebook_url', label: 'f', title: 'Facebook' },
+    { key: 'instagram_url', label: 'in', title: 'Instagram' },
+    { key: 'youtube_url', label: 'yt', title: 'YouTube' },
+  ]
 
   return (
     <footer className="bg-forest-900 text-white">
@@ -34,25 +35,29 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 bg-forest-700 rounded-lg flex items-center justify-center">
-                <Leaf className="w-5 h-5 text-white" />
-              </div>
+              {logoUrl
+                ? <img src={logoUrl} alt={siteName} className="w-9 h-9 rounded-lg object-contain" />
+                : <div className="w-9 h-9 bg-forest-700 rounded-lg flex items-center justify-center">
+                    <Leaf className="w-5 h-5 text-white" />
+                  </div>
+              }
               <span className="text-xl font-bold">
-                ETR <span className="text-accent-400">Plants</span>
+                {siteName.includes(' ')
+                  ? <>{siteName.split(' ')[0]} <span className="text-accent-400">{siteName.split(' ').slice(1).join(' ')}</span></>
+                  : siteName
+                }
               </span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
-              Your trusted partner for plantation planning, farm design, and expert agricultural guidance across Andhra Pradesh, Telangana, and Tamil Nadu.
+              {content.footer_tagline || 'Your trusted partner for plantation planning, farm design, and expert agricultural guidance.'}
             </p>
             <div className="flex items-center gap-3">
-              {[
-                { label: 'f', title: 'Facebook' },
-                { label: 'in', title: 'Instagram' },
-                { label: 'yt', title: 'YouTube' },
-              ].map(({ label, title }) => (
+              {socialLinks.map(({ key, label, title }) => (
                 <a
                   key={title}
-                  href="#"
+                  href={content[key] || '#'}
+                  target={content[key] && content[key] !== '#' ? '_blank' : undefined}
+                  rel="noopener noreferrer"
                   aria-label={title}
                   className="w-9 h-9 rounded-lg bg-white/10 hover:bg-forest-700 flex items-center justify-center transition-colors text-xs font-bold text-white"
                 >
@@ -68,7 +73,7 @@ export default function Footer() {
               Quick Links
             </h3>
             <ul className="space-y-2">
-              {footerLinks.quickLinks.map((link) => (
+              {quickLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -87,7 +92,14 @@ export default function Footer() {
               Our Services
             </h3>
             <ul className="space-y-2">
-              {footerLinks.services.map((service) => (
+              {[
+                'Plantation Planning',
+                'Plant Selection',
+                'Farm Layout Design',
+                'Investment Estimation',
+                'Maintenance Planning',
+                'Expected Income Analysis',
+              ].map((service) => (
                 <li key={service} className="text-gray-400 text-sm">
                   {service}
                 </li>
@@ -101,18 +113,30 @@ export default function Footer() {
               Contact Us
             </h3>
             <div className="space-y-3">
-              <div className="flex items-start gap-3 text-gray-400 text-sm">
-                <MapPin className="w-4 h-4 mt-0.5 text-accent-500 shrink-0" />
-                <span>Contact address will be configured by admin.</span>
-              </div>
-              <div className="flex items-center gap-3 text-gray-400 text-sm">
-                <Phone className="w-4 h-4 text-accent-500 shrink-0" />
-                <span>Phone number managed via admin panel</span>
-              </div>
-              <div className="flex items-center gap-3 text-gray-400 text-sm">
-                <Mail className="w-4 h-4 text-accent-500 shrink-0" />
-                <span>Email configured by admin</span>
-              </div>
+              {content.address && (
+                <div className="flex items-start gap-3 text-gray-400 text-sm">
+                  <MapPin className="w-4 h-4 mt-0.5 text-accent-500 shrink-0" />
+                  <span>{content.address}</span>
+                </div>
+              )}
+              {content.phone && (
+                <a href={`tel:${content.phone}`} className="flex items-center gap-3 text-gray-400 hover:text-white text-sm transition-colors">
+                  <Phone className="w-4 h-4 text-accent-500 shrink-0" />
+                  <span>{content.phone}</span>
+                </a>
+              )}
+              {content.whatsapp && (
+                <a href={`https://wa.me/${content.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-gray-400 hover:text-green-400 text-sm transition-colors">
+                  <MessageCircle className="w-4 h-4 text-accent-500 shrink-0" />
+                  <span>WhatsApp: {content.whatsapp}</span>
+                </a>
+              )}
+              {content.email && (
+                <a href={`mailto:${content.email}`} className="flex items-center gap-3 text-gray-400 hover:text-white text-sm transition-colors">
+                  <Mail className="w-4 h-4 text-accent-500 shrink-0" />
+                  <span>{content.email}</span>
+                </a>
+              )}
             </div>
 
             <div className="mt-6">
@@ -132,10 +156,10 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-gray-500 text-xs">
-            © {new Date().getFullYear()} ETR Plants. All rights reserved.
+            {content.copyright || `\u00a9 ${new Date().getFullYear()} ETR Plants. All rights reserved.`}
           </p>
           <p className="text-gray-600 text-xs text-center sm:text-right max-w-md">
-            Income and yield figures shown on this platform are estimates based on configured assumptions and may vary depending on climate, soil, maintenance, and market conditions.
+            {content.disclaimer || 'Income and yield figures shown on this platform are estimates based on configured assumptions and may vary depending on climate, soil, maintenance, and market conditions.'}
           </p>
         </div>
       </div>
